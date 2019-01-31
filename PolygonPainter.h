@@ -25,6 +25,7 @@ public slots:
 private:
     int LineInterSectionsLMRTest(glm::vec2 pa, glm::vec2 pb, glm::vec2 pc, glm::vec2 pd) ;
     std::vector<glm::vec2> polygon;
+    std::vector<std::array<QPointF, 3>> triangles;
 };
 
 #endif // POLYGONPAINTER_H

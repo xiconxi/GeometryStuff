@@ -6,6 +6,7 @@
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/mat2x2.hpp>
 #include <stack>
+#include <polypartition.h>
 
 bool toLeftTest(QPointF pa, QPointF pb, QPointF pc) {
    auto v =  glm::determinant(glm::mat3(glm::vec3(pa.x(), pa.y(), 1.0f),glm::vec3(pb.x(), pb.y(), 1.0f),glm::vec3(pc.x(), pc.y(), 1.0f)));
@@ -64,8 +65,7 @@ void PolygonPainter::paint(QPainter *painter) {
     pen.setWidth(1.4);
     painter->setPen(pen);
 
-    QBrush brush(QColor(255, 0, 0, 80));
-    painter->setBrush(brush);
+    painter->setBrush(QBrush(QColor(255, 0, 0, 80)));
     painter->setRenderHint(QPainter::Antialiasing);
 
     std::vector<QPointF> Qpoly(polygon.size());
@@ -74,6 +74,12 @@ void PolygonPainter::paint(QPainter *painter) {
 
     painter->drawConvexPolygon(&Qpoly[0], polygon.size());
 
+    QBrush brush(QColor(255, 124, 0, 80));
+    painter->setBrush(brush);
+    painter->setRenderHint(QPainter::Antialiasing);
+    for(int i = 0; i < triangles.size(); i++) {
+        painter->drawConvexPolygon(&triangles[i][0], 3);
+    }
 }
 
 void PolygonPainter::addPoint(qreal x, qreal y){
@@ -112,6 +118,14 @@ void PolygonPainter::inPolygonTest(qreal x, qreal y) {
 }
 
 void PolygonPainter::Triangulation() {
+    std::vector<glm::ivec3> _triangles;
+    Triangulate_EC(polygon, _triangles);
+    for(auto tri : _triangles) {
+        std::array<QPointF,3> _tri;
+        for(int i = 0; i < 3; i++)
+            _tri[i] = QPointF(polygon[tri[i]].x, polygon[tri[i]].y);
+        triangles.emplace_back(_tri);
+    }
 //    std::list<int> list;
 //    std::vector<int> next(polygon.size());
 //    for(int i = 0; i < polygon.size(); i++) {
