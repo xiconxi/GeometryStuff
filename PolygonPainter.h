@@ -5,6 +5,7 @@
 #include <vector>
 #include <array>
 #include <QLine>
+#include <glm/common.hpp>
 
 class PolygonPainter : public QQuickPaintedItem
 {
@@ -19,8 +20,11 @@ public slots:
 
     void inPolygonTest(qreal x, qreal y);
 
+    void Triangulation();
+
 private:
-    std::vector<QPointF> points;
+    int LineInterSectionsLMRTest(glm::vec2 pa, glm::vec2 pb, glm::vec2 pc, glm::vec2 pd) ;
+    std::vector<glm::vec2> polygon;
 };
 
 #endif // POLYGONPAINTER_H

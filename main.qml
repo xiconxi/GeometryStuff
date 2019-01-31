@@ -4,7 +4,7 @@ import GeometryLabs 1.0
 
 Window {
     visible: true
-    width: 640
+    width: 500
     height: 480
     title: qsTr("Hello World")
     PolygonPainter{
@@ -16,7 +16,7 @@ Window {
                 if(!onTest)
                     parent.addPoint(mouseX, mouseY)
                 else {
-                    console.log(mouseX, mouseY)
+                    parent.Triangulation();
                 }
             }
             onDoubleClicked: {

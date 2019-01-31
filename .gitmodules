@@ -1,0 +1,3 @@
+[submodule "Externals/polypartition"]
+	path = Externals/polypartition
+	url = https://github.com/xiconxi/polypartition
