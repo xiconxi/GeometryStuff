@@ -6,11 +6,11 @@
 struct PartitionVertex {
     PartitionVertex(){}
     PartitionVertex(std::uint32_t _id, std::uint32_t __prev, std::uint32_t __next, std::vector<glm::vec2>* ref, PartitionVertex* self_ref):
-        _prev(__prev), _next(__next), vidx(_id), _vertex(ref), _offset(self_ref) {}
-    bool isActive{true};
-    bool isConvex{false};
+        _prev(__prev), _next(__next), vidx(_id), _vertex(ref), _offset(self_ref) {
+    }
+
+    bool isConvex{true};
     bool isEar{false};
-    float angle;
 
     std::uint32_t vidx;
 
@@ -22,7 +22,7 @@ struct PartitionVertex {
     }
 
     PartitionVertex* prev(PartitionVertex* p = nullptr){
-        if(p) _next = p - _offset;
+        if(p) _prev = p - _offset;
         return _offset + _prev;
     }
 
@@ -41,65 +41,55 @@ bool InTriangle(glm::vec2 pa, glm::vec2 pb, glm::vec2 pc, glm::vec2 p) {
     return s == 0 || s == 3;
 }
 
-void UpdateVertex(PartitionVertex *v, PartitionVertex *vertices, long length) {
-    v->isConvex = Area(v->prev()->vertex(), v->vertex(), v->next()->vertex()) > 0.0f;
-    v->angle    = glm::dot(v->prev()->vertex() - v->vertex(), v->next()->vertex() - v->vertex());
-
-    if(v->isConvex) {
-        v->isEar = true;
-        for(int i = 0; i < length; i++) {
-            if(v->vidx == i || v->next()->vidx == i || v->prev()->vidx == i ) continue;
-            if(InTriangle(v->prev()->vertex(), v->vertex(), v->next()->vertex(), vertices->vertex())) {
+void UpdateVertex(PartitionVertex *v, bool convexChanged = false) {
+    if(v->isConvex || convexChanged) {
+        auto curr = v->next()->next();
+        while(curr != v->prev()) {
+            if(InTriangle(v->prev()->vertex(), v->vertex(), v->next()->vertex(), curr->vertex())) {
                 v->isEar = false;
-                break;
+                curr->isConvex = false;
+                return ;
             }
-        }
-    } else {
-        v->isEar = false;
+            curr = curr->next();
+        };
+        v->isEar = Area(v->prev()->vertex(), v->vertex(), v->next()->vertex()) > 0.0f;
     }
 }
 
 int Triangulate_EC(std::vector<glm::vec2> &poly, std::vector<glm::ivec3>  &triangles) {
     if(poly.size() < 3) return 0;
 
-    //initialize circular linked list
     PartitionVertex vertexs[poly.size()];
+    //initialize circular linked list
     for(int i = 0; i < poly.size(); i++)
         vertexs[i] = PartitionVertex(i, i == 0 ? poly.size()-1: i-1, i == poly.size()-1 ? 0: i+1, &poly, vertexs);
 
-    for(int i = 0; i < poly.size(); i++)
-        UpdateVertex(vertexs + i, vertexs, poly.size());
+    for(int i = 0; i < poly.size(); i++)  UpdateVertex(vertexs + i);
 
-    for(int i = 0; i < poly.size() - 3; i++) {
-        PartitionVertex* ear = nullptr;
-        for( int j = 0; j < poly.size(); j++) {
-            if( !vertexs[j].isActive || !vertexs[j].isEar) continue;
-            if( !ear ) {
-                ear = vertexs + j;
-            }else
-                ear = vertexs[j].angle > ear->angle ? &vertexs[j]: ear;
+    auto curr = vertexs;
+    while(curr->next()->next() != curr){
+        bool is_ear = false;
+        auto _curr = curr;
+        do {
+            if( curr->isEar ) {
+                is_ear = true; break;
+            }
+            curr = curr->next();
+        }while(_curr != curr );
 
-        }
-        if (!ear) return 0;
+        if ( !is_ear )  return 0;
 
-        triangles.emplace_back(glm::ivec3(ear->prev()->vidx, ear->vidx, ear->next()->vidx));
+        triangles.emplace_back(glm::ivec3(curr->prev()->vidx, curr->vidx, curr->next()->vidx));
 
-        ear->isActive = false;
-        ear->prev()->next(ear->next());
-        ear->next()->prev(ear->prev());
+        // remove ear from link
+        curr->prev()->next(curr->next());
+        curr->next()->prev(curr->prev());
 
-        if( i == poly.size() - 4) break;
+        UpdateVertex(curr->prev(), true);
+        UpdateVertex(curr->next(), true);
 
-        UpdateVertex(ear->prev(), vertexs, poly.size());
-        UpdateVertex(ear->next(), vertexs, poly.size());
-    }
-
-    for(int i = 0; i < poly.size(); i++) {
-        if(!vertexs[i].isActive) continue;
-        triangles.emplace_back(glm::ivec3(vertexs[i].prev()->vidx, i, vertexs[i].next()->vidx));
-        break;
-    }
+        curr = curr->prev();
+    };
 
     return 1;
-
 }

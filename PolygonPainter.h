@@ -20,12 +20,15 @@ public slots:
 
     void inPolygonTest(qreal x, qreal y);
 
-    void Triangulation();
+    void pickTriangle(qreal x, qreal y);
+
+    void triangulation();
 
 private:
     int LineInterSectionsLMRTest(glm::vec2 pa, glm::vec2 pb, glm::vec2 pc, glm::vec2 pd) ;
     std::vector<glm::vec2> polygon;
-    std::vector<std::array<QPointF, 3>> triangles;
+    std::vector<glm::ivec3> triangles;
+    std::array<QPointF,3> pickedTri;
 };
 
 #endif // POLYGONPAINTER_H
